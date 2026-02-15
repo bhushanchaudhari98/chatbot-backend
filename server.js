@@ -7,10 +7,26 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Render compatibility
+const PORT = process.env.PORT || 3000;
+
 const API_KEY = process.env.OPENROUTER_API_KEY;
+
+// Health check route (important for Render)
+app.get("/", (req, res) => {
+  res.send("Chatbot backend is running");
+});
 
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: "No message provided" });
+  }
+
+  if (!API_KEY) {
+    return res.status(500).json({ error: "API key missing" });
+  }
 
   try {
     const response = await axios.post(
@@ -33,11 +49,11 @@ app.post("/chat", async (req, res) => {
     res.json({ reply });
 
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.status(500).json({ error: "API Error" });
+    console.error("OpenRouter Error:", err.response?.data || err.message);
+    res.status(500).json({ error: "OpenRouter API Error" });
   }
 });
 
-app.listen(3000, () =>
-  console.log("Server running on http://localhost:3000")
+app.listen(PORT, () =>
+  console.log(`Server running on port ${PORT}`)
 );
