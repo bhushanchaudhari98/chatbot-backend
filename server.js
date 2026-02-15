@@ -10,7 +10,8 @@ app.use(express.json());
 // Render compatibility
 const PORT = process.env.PORT || 3000;
 
-const API_KEY = process.env.OPENROUTER_API_KEY;
+const API_KEY = "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"
+;
 
 // Health check route (important for Render)
 app.get("/", (req, res) => {
