@@ -7,28 +7,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = process.env.OPENROUTER_API_KEY;
 
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
 
-  if (!message) return res.status(400).json({ error: "No message" });
-
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-    
-    const response = await axios.post(url, {
-      contents: [
-        {
-          parts: [{ text: message }]
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "mistralai/mistral-7b-instruct",
+        messages: [
+          { role: "user", content: message }
+        ]
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          "Content-Type": "application/json"
         }
-      ]
-    });
+      }
+    );
 
-    const aiResponse =
-      response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    res.json({ reply: aiResponse || "AI returned an empty response." });
+    const reply = response.data.choices[0].message.content;
+    res.json({ reply });
 
   } catch (err) {
     console.error(err.response?.data || err.message);
@@ -36,7 +38,6 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log(`🚀 Server running on port ${PORT}`)
+app.listen(3000, () =>
+  console.log("Server running on http://localhost:3000")
 );
