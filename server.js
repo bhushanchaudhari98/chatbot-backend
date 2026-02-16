@@ -7,54 +7,74 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Render compatibility
+// Render + local support
 const PORT = process.env.PORT || 3000;
 
-const API_KEY = "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"
-;
+// API key from .env
+const API_KEY = process.env.OPENROUTER_API_KEY;
 
-// Health check route (important for Render)
+// Health check route
 app.get("/", (req, res) => {
-  res.send("Chatbot backend is running");
+res.send("Chatbot backend is running");
 });
 
 app.post("/chat", async (req, res) => {
-  const { message } = req.body;
+const { message } = req.body;
 
-  if (!message) {
-    return res.status(400).json({ error: "No message provided" });
-  }
+if (!message) {
+return res.status(400).json({ error: "No message provided" });
+}
 
-  if (!API_KEY) {
-    return res.status(500).json({ error: "API key missing" });
-  }
+if (!API_KEY) {
+return res.status(500).json({ error: "API key missing" });
+}
 
-  try {
-    const response = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        model: "mistralai/mistral-7b-instruct",
-        messages: [
-          { role: "user", content: message }
-        ]
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${API_KEY}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
+try {
+const response = await axios.post(
+"https://openrouter.ai/api/v1/chat/completions",
+{
+model: "mistralai/mistral-7b-instruct",
+messages: [
+{
+role: "system",
+content:
+"You are an AI assistant for construction and infrastructure disputes. Answer clearly and professionally. Do not include legal disclaimers or warnings."
+},
+{
+role: "user",
+content: message
+}
+]
+},
+{
+headers: {
+Authorization: `Bearer ${API_KEY}`,
+"Content-Type": "application/json"
+}
+}
+);
 
-    const reply = response.data.choices[0].message.content;
-    res.json({ reply });
+```
+let reply = response.data.choices[0].message.content;
 
-  } catch (err) {
-    console.error("OpenRouter Error:", err.response?.data || err.message);
-    res.status(500).json({ error: "OpenRouter API Error" });
-  }
+// Extra safety: remove disclaimer if model still sends it
+reply = reply.replace(/This is not legal advice\.?/gi, "");
+
+res.json({ reply });
+```
+
+} catch (err) {
+console.error("OpenRouter Error:", err.response?.data || err.message);
+
+```
+res.json({
+  reply: "AI service is temporarily unavailable. Please try again."
+});
+```
+
+}
 });
 
 app.listen(PORT, () =>
-  console.log(`Server running on port ${PORT}`)
+console.log(`Server running on http://localhost:${PORT}`)
 );
